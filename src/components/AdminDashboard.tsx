@@ -23,7 +23,7 @@ import {
   Palette,
   Film
 } from "lucide-react";
-import { handleImageError, resolveImageUrl } from "../utils/imageRetry";
+import { handleImageError, resolveImageUrl, resolveAssetUrl } from "../utils/imageRetry";
 import { CustomButton } from "./CustomButton";
 import { AESTHETIC_DICTIONARY } from "../utils/aestheticDictionary";
 import { 
@@ -624,7 +624,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
       selected.forEach((img: any, idx: number) => {
         const num = img.id || (idx + 1);
         const imgTrait = img.trait || "미지정";
-        const imgUrl = img.url ? `${window.location.origin}${img.url}` : "";
+        const imgUrl = img.url ? resolveAssetUrl(img.url) : "";
         csvContent += `${idx + 1},${num}번 이미지,${imgTrait},100,${imgUrl}\n`;
       });
 
@@ -783,7 +783,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
           className="w-full max-w-[420px] p-12 relative z-10 text-center text-black min-h-[460px] flex flex-col justify-center"
         >
           {/* Beautiful real paper background matching the main app */}
-          <img src="/paper1.png" alt="Paper border" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none -z-10" />
+          <img src={resolveAssetUrl("/paper1.png")} alt="Paper border" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none -z-10" />
           
           <div className="relative z-10 space-y-8 py-4 flex flex-col items-center">
             <div className="space-y-3">
@@ -1323,7 +1323,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
                           style={{ width: "280px", height: "437px", aspectRatio: "280/437" }}
                         >
                           <img 
-                            src="/card-front.png"
+                            src={resolveAssetUrl("/card-front.png")}
                             className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
                             style={{ transform: "scale(1.03)", width: "280px", height: "437px" }}
                           />
@@ -1355,7 +1355,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
                           style={{ width: "280px", height: "437px", aspectRatio: "280/437" }}
                         >
                           <img 
-                            src="/card-back.jpg"
+                            src={resolveAssetUrl("/card-back.jpg")}
                             className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
                             style={{ width: "280px", height: "437px" }}
                           />
@@ -1419,7 +1419,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
                               style={{ width: "280px", height: "437px", aspectRatio: "280/437" }}
                             >
                               <img 
-                                src="/card-front.png"
+                                src={resolveAssetUrl("/card-front.png")}
                                 className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
                                 style={{ transform: "scale(1.03)", width: "280px", height: "437px" }}
                               />
@@ -1456,7 +1456,7 @@ export default function AdminDashboard({ onExit }: AdminDashboardProps) {
                               style={{ width: "280px", height: "437px", aspectRatio: "280/437" }}
                             >
                               <img 
-                                src="/card-back.jpg"
+                                src={resolveAssetUrl("/card-back.jpg")}
                                 className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
                                 style={{ width: "280px", height: "437px" }}
                               />

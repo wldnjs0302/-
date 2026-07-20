@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ImageItem } from "../types";
 import { ArrowRight } from "lucide-react";
 import { CustomButton } from "./CustomButton";
+import { resolveAssetUrl } from "../utils/imageRetry";
 
 interface P4OrbitProps {
   images: ImageItem[];
@@ -78,12 +79,12 @@ export default function P4Orbit({ images, userName, onNext }: P4OrbitProps) {
     const meshData: { mesh: THREE.Group; gatheredPos: THREE.Vector3; spreadPos: THREE.Vector3; gatheredRotZ: number; gatheredScale: number; }[] = [];
 
     const fallbackLocalImages = [
-      "/age-adult.png",
-      "/age-child.png", 
-      "/age-infant.png",
-      "/age-middle.png",
-      "/age-senior.png",
-      "/logo.png"
+      resolveAssetUrl("/age-adult.png"),
+      resolveAssetUrl("/age-child.png"), 
+      resolveAssetUrl("/age-infant.png"),
+      resolveAssetUrl("/age-middle.png"),
+      resolveAssetUrl("/age-senior.png"),
+      resolveAssetUrl("/logo.png")
     ];
 
     images.forEach((img, i) => {

@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { CustomButton } from "./CustomButton";
-import { handleImageError } from "../utils/imageRetry";
+import { handleImageError, resolveAssetUrl } from "../utils/imageRetry";
 
 interface P1IntroProps {
   onNext: () => void;
@@ -150,7 +150,7 @@ export default function P1Intro({ onNext }: P1IntroProps) {
               >
                 <div className={`flex flex-col items-center select-none transition-all duration-700 ${isLogoHovered ? "scale-[1.02]" : "scale-100"}`}>
                   <img 
-                    src="/logo.png" 
+                    src={resolveAssetUrl("/logo.png")} 
                     alt="HOMO IMAGES Lab"
                     className="w-[60vw] md:w-[30vw] max-w-sm transition-all duration-700"
                     style={{
@@ -185,7 +185,7 @@ export default function P1Intro({ onNext }: P1IntroProps) {
           >
             <div className="relative text-black font-dandan font-black text-2xl px-12 py-8 w-fit origin-center -rotate-[20deg] cursor-pointer transform transition-transform hover:scale-105 flex items-center justify-center"
             >
-              <img src="/small_paper.png" alt="Touch me bg" className="absolute inset-0 w-full h-full object-fill drop-shadow-lg pointer-events-none" />
+              <img src={resolveAssetUrl("/small_paper.png")} alt="Touch me bg" className="absolute inset-0 w-full h-full object-fill drop-shadow-lg pointer-events-none" />
               <span className="relative z-10 tracking-widest">hello</span>
             </div>
             <motion.div
@@ -199,7 +199,7 @@ export default function P1Intro({ onNext }: P1IntroProps) {
               style={{ transformOrigin: "top" }}
               className="absolute top-[80%] left-0 mt-4 p-10 md:p-12 text-black w-[320px] md:w-[380px] -rotate-6 z-30"
             >
-              <img src="/paper2.png" alt="Paper 2" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none" />
+              <img src={resolveAssetUrl("/paper2.png")} alt="Paper 2" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none" />
               <div className="relative z-10 px-2 py-2">
                 <h3 className="font-dandan font-black text-2xl mb-4 text-left tracking-wider drop-shadow-sm text-neutral-900 border-b-2 border-black/10 pb-2">WELCOME! HOMO!!</h3>
                 <p className="font-dandan font-medium leading-relaxed text-sm md:text-base text-left tracking-wider text-neutral-800">
@@ -216,7 +216,7 @@ export default function P1Intro({ onNext }: P1IntroProps) {
           >
             <div className="relative text-black font-dandan font-black text-2xl px-12 py-8 w-fit origin-center rotate-[15deg] cursor-pointer transform transition-transform hover:scale-105 flex items-center justify-center"
             >
-              <img src="/small_paper.png" alt="Touch me bg" className="absolute inset-0 w-full h-full object-fill drop-shadow-lg pointer-events-none" />
+              <img src={resolveAssetUrl("/small_paper.png")} alt="Touch me bg" className="absolute inset-0 w-full h-full object-fill drop-shadow-lg pointer-events-none" />
               <span className="relative z-10 tracking-widest">Touch me</span>
             </div>
             <motion.div
@@ -230,7 +230,7 @@ export default function P1Intro({ onNext }: P1IntroProps) {
               style={{ transformOrigin: "top" }}
               className="absolute top-[80%] right-0 md:right-auto md:left-[-100%] mt-4 p-10 md:p-12 text-black w-[320px] md:w-[380px] rotate-3 z-30"
             >
-              <img src="/paper1.png" alt="Paper 1" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none" />
+              <img src={resolveAssetUrl("/paper1.png")} alt="Paper 1" className="absolute inset-0 w-full h-full object-fill drop-shadow-2xl pointer-events-none" />
               <div className="relative z-10 px-2 py-2">
                 <h3 className="font-dandan font-black text-2xl mb-4 text-left tracking-wider drop-shadow-sm text-neutral-900 border-b-2 border-black/10 pb-2">HOMO IMAGES</h3>
                 <p className="font-dandan font-medium leading-relaxed text-sm md:text-base text-left tracking-wider text-neutral-800">

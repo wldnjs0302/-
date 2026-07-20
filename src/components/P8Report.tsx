@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Download, Share2, Layers, Rotate3D } from "lucide-react";
 import { UserData, ImageItem } from "../types";
 import { CustomButton } from "./CustomButton";
-import { handleImageError } from "../utils/imageRetry";
+import { handleImageError, resolveAssetUrl } from "../utils/imageRetry";
 
 interface P8ReportProps {
   userData: UserData;
@@ -203,7 +203,7 @@ export default function P8Report({ userData, middleName, creationUrl, lastNameSi
     >
       {/* Background Image as actual HTML img tag for robust html2canvas capture */}
       <img 
-        src={window.location.origin + "/card-front.png"}
+        src={resolveAssetUrl("/card-front.png")}
         className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
         style={{
           position: "absolute",
@@ -320,7 +320,7 @@ export default function P8Report({ userData, middleName, creationUrl, lastNameSi
     >
       {/* Background Image as actual HTML img tag for robust html2canvas capture (guarantees the center logo on card-back.jpg is rendered) */}
       <img 
-        src={window.location.origin + "/card-back.jpg"}
+        src={resolveAssetUrl("/card-back.jpg")}
         className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
         style={{
           position: "absolute",

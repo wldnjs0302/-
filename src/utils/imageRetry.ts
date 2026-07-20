@@ -129,3 +129,29 @@ export const handleImageError = (
     }
   }
 };
+
+/**
+ * Dynamically resolves any static public asset path to a full absolute URL.
+ * Handles standard root domains, custom base URLs, subdirectories, and proxy contexts perfectly.
+ */
+export function resolveAssetUrl(path: string): string {
+  if (!path) return "";
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  
+  let base = (import.meta as any).env?.BASE_URL || "/";
+  
+  // If base is default "/", check if the browser pathname has a subdirectory
+  if (base === "/") {
+    const pathname = window.location.pathname;
+    if (pathname && pathname !== "/") {
+      const parts = pathname.split("/");
+      if (parts.length > 2) {
+        base = "/" + parts[1] + "/";
+      }
+    }
+  }
+  
+  const baseWithSlash = base.endsWith('/') ? base : base + '/';
+  return new URL(baseWithSlash + cleanPath, window.location.origin).href;
+}
+

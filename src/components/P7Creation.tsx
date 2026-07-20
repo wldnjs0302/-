@@ -4,7 +4,7 @@ import { ImageItem } from "../types";
 import { ArrowRight, Pencil, Eraser, Check, Trash2, Plus, Minus, Hand, MoveHorizontal, RotateCcw, RotateCw, Undo, Redo } from "lucide-react";
 import { cn } from "../lib/utils";
 import { CustomButton } from "./CustomButton";
-import { handleImageError } from "../utils/imageRetry";
+import { handleImageError, resolveAssetUrl } from "../utils/imageRetry";
 
 interface P7CreationProps {
   selectedImages: ImageItem[];
@@ -18,61 +18,62 @@ const BODY_SHAPES = [
     id: 'b1',
     name: '사유하는 선',
     description: '내면을 채우는 균형의 감각',
-    imgUrl: '/body1.png',
+    imgUrl: resolveAssetUrl('/body1.png'),
     renderSvg: () => (
-      <img src="/body1.png" className="w-full h-full object-contain pointer-events-none select-none" alt="사유하는 선" referrerPolicy="no-referrer" />
+      <img src={resolveAssetUrl("/body1.png")} className="w-full h-full object-contain pointer-events-none select-none" alt="사유하는 선" referrerPolicy="no-referrer" />
     )
   },
   {
     id: 'b2',
     name: '흐르는 곡선',
     description: '물결치듯 유연한 사고',
-    imgUrl: '/body2.png',
+    imgUrl: resolveAssetUrl('/body2.png'),
     renderSvg: () => (
-      <img src="/body2.png" className="w-full h-full object-contain pointer-events-none select-none" alt="흐르는 곡선" referrerPolicy="no-referrer" />
+      <img src={resolveAssetUrl("/body2.png")} className="w-full h-full object-contain pointer-events-none select-none" alt="흐르는 곡선" referrerPolicy="no-referrer" />
     )
   },
   {
     id: 'b3',
     name: '기하학적 블록',
     description: '단단하고 곧은 의지의 기둥',
-    imgUrl: '/body3.png',
+    imgUrl: resolveAssetUrl('/body3.png'),
     renderSvg: () => (
-      <img src="/body3.png" className="w-full h-full object-contain pointer-events-none select-none" alt="기하학적 블록" referrerPolicy="no-referrer" />
+      <img src={resolveAssetUrl("/body3.png")} className="w-full h-full object-contain pointer-events-none select-none" alt="기하학적 블록" referrerPolicy="no-referrer" />
     )
   },
   {
     id: 'b4',
     name: '유기적 파동',
     description: '리드미컬하고 다채로운 호기심',
-    imgUrl: '/body4.png',
+    imgUrl: resolveAssetUrl('/body4.png'),
     renderSvg: () => (
-      <img src="/body4.png" className="w-full h-full object-contain pointer-events-none select-none" alt="유기적 파동" referrerPolicy="no-referrer" />
+      <img src={resolveAssetUrl("/body4.png")} className="w-full h-full object-contain pointer-events-none select-none" alt="유기적 파동" referrerPolicy="no-referrer" />
     )
   },
   {
     id: 'b5',
     name: '사유자의 무브',
     description: '안정적 궤도 속 깊은 관조',
-    imgUrl: '/body5.png',
+    imgUrl: resolveAssetUrl('/body5.png'),
     renderSvg: () => (
-      <img src="/body5.png" className="w-full h-full object-contain pointer-events-none select-none" alt="사유자의 무브" referrerPolicy="no-referrer" />
+      <img src={resolveAssetUrl("/body5.png")} className="w-full h-full object-contain pointer-events-none select-none" alt="사유자의 무브" referrerPolicy="no-referrer" />
     )
   }
 ];
 
 const SILHOUETTES = [
-  { id: 's1', url: '/shape1.png', headTop: -104 },
-  { id: 's2', url: '/shape2.png', headTop: -88 },
-  { id: 's3', url: '/shape3.png', headTop: -60 },
-  { id: 's4', url: '/shape4.png', headTop: -90 },
-  { id: 's5', url: '/shape5.png', headTop: -104, scale: 0.94 },
-  { id: 's6', url: '/shape6.png', headTop: -88 },
-  { id: 's7', url: '/shape7.png', headTop: -98 },
-  { id: 's8', url: '/shape8.png', headTop: -88 },
-  { id: 's9', url: '/shape9.png', headTop: -90 },
-  { id: 's10', url: '/shape10.png', headTop: -95 },
+  { id: 's1', url: resolveAssetUrl('/shape1.png'), headTop: -104 },
+  { id: 's2', url: resolveAssetUrl('/shape2.png'), headTop: -88 },
+  { id: 's3', url: resolveAssetUrl('/shape3.png'), headTop: -60 },
+  { id: 's4', url: resolveAssetUrl('/shape4.png'), headTop: -90 },
+  { id: 's5', url: resolveAssetUrl('/shape5.png'), headTop: -104, scale: 0.94 },
+  { id: 's6', url: resolveAssetUrl('/shape6.png'), headTop: -88 },
+  { id: 's7', url: resolveAssetUrl('/shape7.png'), headTop: -98 },
+  { id: 's8', url: resolveAssetUrl('/shape8.png'), headTop: -88 },
+  { id: 's9', url: resolveAssetUrl('/shape9.png'), headTop: -90 },
+  { id: 's10', url: resolveAssetUrl('/shape10.png'), headTop: -95 },
 ];
+
 
 const DECO_INSET = 16; // 16px inset gives perfect head proportions and allows decorating down to the body connection
 
@@ -1546,7 +1547,7 @@ export default function P7Creation({ selectedImages, middleName, userName, onCom
             <div ref={step4PreviewRef} className="relative w-[320px] h-[500px] rounded-[32px] shadow-2xl overflow-hidden flex items-center justify-center bg-white">
               {/* Background Image of Card */}
               <img 
-                src={window.location.origin + "/card-front.png"}
+                src={resolveAssetUrl("/card-front.png")}
                 className="absolute inset-0 w-full h-full object-cover z-0 select-none pointer-events-none"
                 style={{
                   position: "absolute",

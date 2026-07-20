@@ -4,6 +4,15 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import AdmZip from "adm-zip";
+
+// Global error handlers to capture startup crashes in Cloud Run logs
+process.on("uncaughtException", (err) => {
+  console.error("[Fatal] Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Fatal] Unhandled Rejection at:", promise, "reason:", reason);
+});
+
 import { findPredefinedUser, getGlobalImageConfig, rawChoiJiwonSheet, rawLeeYoonSeopSheet, rawGwangeoSheet } from "./src/data/userMapping";
 import {
   imgData,
@@ -16,14 +25,17 @@ import {
 
 dotenv.config();
 
-// Auto-detect production mode when bundled or run from dist
-if (typeof __filename !== "undefined" && (__filename.includes("server.cjs") || __filename.includes("dist"))) {
-  process.env.NODE_ENV = "production";
-}
-
 // Initialize Firebase SDK for persistent cloud Firestore
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc, getDocFromServer, setLogLevel } from "firebase/firestore";
+
+// Robust environment detection: Force production if running from bundled dist
+if (!process.env.NODE_ENV) {
+  if (typeof __filename !== "undefined" && (__filename.includes("server.cjs") || __filename.includes("dist"))) {
+    process.env.NODE_ENV = "production";
+  }
+}
+console.log(`[Startup] Initial NODE_ENV: ${process.env.NODE_ENV}`);
 
 let firebaseApp: any = null;
 let db: any = null;
@@ -81,7 +93,7 @@ async function testFirebaseConnection() {
     console.log("[Firebase] Firestore offline or pending initial schema validation.");
   }
 }
-testFirebaseConnection();
+// Non-blocking test initialized during startServer()
 
 function sanitizeForFirestore(obj: any): any {
   if (obj === null || obj === undefined) return null;
@@ -475,11 +487,13 @@ async function ensureLeeYoonSeopImages() {
 async function startServer() {
   const app = express();
   
-  // Port detection: 
-  // 1. AI Studio (Dev/Shared) provides DEFAULT_APP_PORT=3000.
-  // 2. Cloud Run provides PORT (usually 8080).
-  // 3. Fallback to 3000 if neither is set.
-  const PORT = Number(process.env.DEFAULT_APP_PORT || process.env.PORT || 3000);
+  // Port detection logic:
+  // Bind to port 3000 in development, but use process.env.PORT in production for Cloud Run
+  const isDev = process.env.NODE_ENV !== "production";
+  const PORT = isDev ? 3000 : Number(process.env.PORT || 8080);
+
+  console.log(`[Startup] Mode: ${isDev ? 'Development/Shared' : 'Production (Cloud Run)'}`);
+  console.log(`[Startup] Port: ${PORT} (from PORT_ENV=${process.env.PORT}, DEFAULT_APP_PORT=${process.env.DEFAULT_APP_PORT}, NODE_ENV=${process.env.NODE_ENV})`);
 
   app.use(express.json({ limit: '10mb' }));
   app.get("/api/health", (req, res) => { res.json({ status: "ok" }); });
@@ -1600,7 +1614,10 @@ Response JSON Format:
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    
+    // Test Firebase connection in the background after the server starts listening
+    testFirebaseConnection().catch(err => console.error("[Startup] Firebase test failed:", err));
   });
 }
 

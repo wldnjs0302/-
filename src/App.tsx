@@ -11,6 +11,7 @@ import P6Analysis from './components/P6Analysis';
 import P7Creation from './components/P7Creation';
 import P8Report from './components/P8Report';
 import AdminDashboard from './components/AdminDashboard';
+import { resolveAssetUrl } from './utils/imageRetry';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('P1');
@@ -256,32 +257,69 @@ export default function App() {
     const dummyImages = generateDummyImages(data.name);
     setImages(dummyImages);
 
-    // Preload falling/orbit images during P3 (Syncing Screen, 3.5 seconds) so they exist in browser cache!
-    dummyImages.forEach(img => {
-      const preloadImg = new Image();
-      preloadImg.src = img.url;
+    const startTime = Date.now();
+    const minLoadingTime = 7000; // Keep loading for at least 7.0s as explicitly requested!
+    const maxLoadingTime = 300000; // Keep loading up to 5 minutes to ensure all images are fully preloaded, as requested!
+    let transitionTriggered = false;
+
+    const proceedToOrbit = () => {
+      if (transitionTriggered) return;
+      transitionTriggered = true;
+      setCurrentPage('P4');
+    };
+
+    const triggerTransition = (pendingPromises: Promise<any>[]) => {
+      Promise.all(pendingPromises).then(() => {
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+        setTimeout(proceedToOrbit, remainingTime);
+      }).catch((err) => {
+        console.warn("Preloading encountered some image errors, proceeding to P4 anyway:", err);
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+        setTimeout(proceedToOrbit, remainingTime);
+      });
+    };
+
+    // Preload falling/orbit images during P3 (Syncing Screen) so they exist in browser cache!
+    const dummyPromises = dummyImages.map(img => {
+      return new Promise<void>((resolve) => {
+        const preloadImg = new Image();
+        preloadImg.src = resolveAssetUrl(img.url);
+        preloadImg.onload = () => resolve();
+        preloadImg.onerror = () => resolve();
+      });
     });
 
     // Asynchronously fetch dynamic custom folder images (or custom fallback) from mapping
     import('./data/userMapping').then(({ getUserCustomImages }) => {
       console.log(`Debug: Looking for images for user: "${data.name}"`);
       const customImages = getUserCustomImages(data.name);
-      if (customImages) {
+      if (customImages && customImages.length > 0) {
         console.log(`Successfully synced backend images for "${data.name}":`, customImages.length);
         setImages(customImages);
-        customImages.forEach((img: ImageItem) => {
-          const preloadImg = new Image();
-          preloadImg.src = img.url;
+        const customPromises = customImages.map((img: ImageItem) => {
+          return new Promise<void>((resolve) => {
+            const preloadImg = new Image();
+            preloadImg.src = resolveAssetUrl(img.url);
+            preloadImg.onload = () => resolve();
+            preloadImg.onerror = () => resolve();
+          });
         });
+        triggerTransition(customPromises);
       } else {
         console.log(`Debug: No images found for user "${data.name}" in USER_CUSTOM_IMAGES mapping.`);
+        triggerTransition(dummyPromises);
       }
+    }).catch(err => {
+      console.error("Error dynamically preloading user custom images:", err);
+      triggerTransition(dummyPromises);
     });
     
-    setTimeout(() => {
-      setCurrentPage('P4');
-    }, 3500);
+    // Absolute safety fallback
+    setTimeout(proceedToOrbit, maxLoadingTime);
   }, []);
+
 
   const handleP4Next = useCallback(() => {
     setCurrentPage('P5');
@@ -387,19 +425,26 @@ export default function App() {
                 {["/age-infant.png", "/age-child.png", "/age-adult.png", "/age-middle.png", "/age-senior.png"].map((src, i) => (
                   <motion.img 
                     key={i}
-                    src={src}
+                    src={resolveAssetUrl(src)}
                     className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-sm"
-                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ 
-                      delay: i * 0.5, 
-                      duration: 0.6, 
-                      type: "spring", stiffness: 200, damping: 15
+                    animate={{ 
+                      opacity: [0, 1, 1, 0],
+                      scale: [0.8, 1.05, 1, 1, 0.8],
+                      y: [15, -2, 0, 0, 15]
+                    }}
+                    transition={{
+                      duration: 3.5,
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                      delay: i * 0.4,
+                      times: [0, 0.15, 0.25, 0.85, 1],
+                      ease: ["easeOut", "easeInOut", "easeInOut", "easeIn"]
                     }}
                     alt={`loading-${i}`}
                   />
                 ))}
               </div>
+
 
               <p className="text-gray-400 text-xs animate-pulse">무의식 궤도 아카이브를 불러오는 중입니다.</p>
             </div>

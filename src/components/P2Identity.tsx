@@ -5,21 +5,23 @@ import { cn } from "../lib/utils";
 import HandwritingInput, { HandwritingInputRef } from "./HandwritingInput";
 import { Loader2, RotateCcw } from "lucide-react";
 import { CustomButton } from "./CustomButton";
+import { resolveAssetUrl } from "../utils/imageRetry";
 
 interface P2IdentityProps {
   onComplete: (data: UserData) => void;
 }
 
 const AGE_OPTIONS = [
-  { id: 'infant' as AgeGroup, label: 'INFANT', image: "/age-infant.png" },
-  { id: 'child' as AgeGroup, label: 'CHILD', image: "/age-child.png" },
-  { id: 'adult' as AgeGroup, label: 'ADULT', image: "/age-adult.png" },
-  { id: 'middle' as AgeGroup, label: 'MIDDLE', image: "/age-middle.png" },
-  { id: 'senior' as AgeGroup, label: 'SENIOR', image: "/age-senior.png" },
+  { id: 'infant' as AgeGroup, label: 'INFANT', image: resolveAssetUrl("/age-infant.png") },
+  { id: 'child' as AgeGroup, label: 'CHILD', image: resolveAssetUrl("/age-child.png") },
+  { id: 'adult' as AgeGroup, label: 'ADULT', image: resolveAssetUrl("/age-adult.png") },
+  { id: 'middle' as AgeGroup, label: 'MIDDLE', image: resolveAssetUrl("/age-middle.png") },
+  { id: 'senior' as AgeGroup, label: 'SENIOR', image: resolveAssetUrl("/age-senior.png") },
 ];
 
-const FEMALE_IMAGE_URL = "/female.png";
-const MALE_IMAGE_URL = "/male.png";
+const FEMALE_IMAGE_URL = resolveAssetUrl("/female.png");
+const MALE_IMAGE_URL = resolveAssetUrl("/male.png");
+
 
 export default function P2Identity({ onComplete }: P2IdentityProps) {
   const [step, setStep] = useState(1);
