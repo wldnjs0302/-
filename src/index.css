@@ -1,0 +1,77 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Nanum+Pen+Script&family=Permanent+Marker&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  @font-face {
+    font-family: 'OkDanDan-Bold';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2508-2@1.0/OkDanDan-Bold.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+}
+
+@theme {
+  --font-sans: "Pretendard", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif KR", ui-serif, Georgia, serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-hand: "Nanum Pen Script", cursive;
+  --font-permanent: "Permanent Marker", cursive;
+  --font-dandan: "OkDanDan-Bold", sans-serif;
+  --color-paper-ivory: #FAF9F6;
+}
+
+@layer base {
+  html {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important;  /* IE and Edge */
+  }
+  html::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Opera */
+  }
+  body {
+    @apply bg-paper-ivory text-gray-900 font-sans antialiased selection:bg-black/30;
+    background-color: var(--color-paper-ivory);
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    min-height: 100% !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  body::-webkit-scrollbar {
+    display: none !important;
+  }
+  #root {
+    min-height: 100%;
+    width: 100%;
+  }
+}
+
+.paper-texture {
+  position: relative;
+  min-height: 100vh;
+}
+
+.paper-texture::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.license-card-container {
+  border: none !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  background-color: #FFFFFF !important;
+}
+

@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "CompletedResult": {
+      "title": "CompletedResult",
+      "description": "Participant test results with final image profile creations",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userData": {
+          "type": "object"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "creationUrl": {
+          "type": "string"
+        },
+        "lastNameSignature": {
+          "type": "string"
+        },
+        "selectedImages": {
+          "type": "array"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "userData", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/results/{resultId}": {
+      "schema": "CompletedResult",
+      "description": "Durable collection of participant analytical results"
+    }
+  }
+}

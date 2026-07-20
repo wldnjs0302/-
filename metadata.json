@@ -1,0 +1,8 @@
+{
+  "name": "호모 이미지스랩 (Homo Imagis Lab)",
+  "description": "사용자의 무의식과 데이터를 분석하여 개인화된 이미지 페르소나를 창조하는 인터랙티브 실험실",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
