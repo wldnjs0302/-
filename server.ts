@@ -13,7 +13,11 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("[Fatal] Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-import { findPredefinedUser, getGlobalImageConfig, rawChoiJiwonSheet, rawLeeYoonSeopSheet, rawGwangeoSheet } from "./src/data/userMapping";
+import { findPredefinedUser, getGlobalImageConfig, rawChoiJiwonSheet, rawLeeYoonSeopSheet, rawGwangeoSheet, rawGahunSheet, rawJikhyeokSheet, rawPyeonganSheet } from "./src/data/userMapping";
+import globalImageMap from "./src/data/globalImageMap.json";
+import rawChoiJiwonAnalyzed from "./src/data/choijiwon_analyzed.json";
+import rawGwangeoAnalyzed from "./src/data/gwangeo_analyzed.json";
+import rawLeeYoonSeopAnalyzed from "./src/data/leeyoonseop_analyzed.json";
 import {
   imgData,
   normalizeTrait,
@@ -129,20 +133,16 @@ const CACHE_TTL_MS = 25000; // 25 seconds of in-memory cache to reduce redundant
 
 function getLiveImageConfig(num: number): { trait: string; weights?: Record<string, number> } {
   try {
-    const mapFilePath = path.join(process.cwd(), "src", "data", "globalImageMap.json");
-    if (fs.existsSync(mapFilePath)) {
-      const data = fs.readFileSync(mapFilePath, "utf8");
-      const liveMap = JSON.parse(data);
-      const cfg = liveMap[String(num)];
-      if (cfg) {
-        if (typeof cfg === "string") {
-          return { trait: cfg };
-        }
-        return {
-          trait: cfg.trait || "형태",
-          weights: cfg.weights
-        };
+    const key = String(num);
+    const cfg = (globalImageMap as any)[key];
+    if (cfg) {
+      if (typeof cfg === "string") {
+        return { trait: cfg };
       }
+      return {
+        trait: cfg.trait || "형태",
+        weights: cfg.weights
+      };
     }
   } catch (err) {
     console.error("Error in getLiveImageConfig helper:", err);
@@ -200,15 +200,52 @@ const activeExtractions: { [key: string]: Promise<void> | null } = {
   choijiwon: null,
   gwangeoreulchajaseo: null,
   leeyoonseop: null,
+  parkgahun: null,
+  jeonjinhyeok: null,
+  jeongpyeongan: null,
 };
+
+// 1. Refined environment detection for AI Studio and Cloud Run
+const kService = process.env.K_SERVICE || "";
+const isAisDev = kService.includes("-dev-");
+const isAisPre = kService.includes("-pre-");
+// AI Studio Dev/Shared Preview is determined by DEFAULT_APP_PORT or K_SERVICE contains '-dev-' or '-pre-'
+const isStudioWorkspace = isAisDev || isAisPre || !!process.env.DEFAULT_APP_PORT;
+
+// Is running in a deployed Cloud Run container (either Dev, Shared or Production)
+const isCloudRun = !!kService;
+
+// Real production is when it's K_SERVICE but NOT a studio workspace
+const isRealProduction = !!(kService && !isStudioWorkspace);
+
+// We run in production mode if we are in real production OR in the Shared Preview (pre) container
+const isProdRun = isRealProduction || isAisPre;
+
+if (isProdRun) {
+  process.env.NODE_ENV = "production";
+}
+
+// EROFS Protection: Cloud Run requires /tmp for any write operations
+const WRITABLE_DIR = isCloudRun ? '/tmp/app-assets' : process.cwd();
+
+// Ensure writable directory exists as early as possible
+if (isCloudRun && !fs.existsSync(WRITABLE_DIR)) {
+  try {
+    fs.mkdirSync(WRITABLE_DIR, { recursive: true });
+    console.log(`[Startup] Created WRITABLE_DIR: ${WRITABLE_DIR}`);
+  } catch (err) {
+    console.error(`[Startup] Failed to create WRITABLE_DIR: ${WRITABLE_DIR}`, err);
+  }
+}
 
 async function ensureChoiJiwonImages() {
   const publicDir = path.join(process.cwd(), 'public', 'choijiwon');
   const distDir = path.join(process.cwd(), 'dist', 'choijiwon');
+  const tmpDir = path.join(WRITABLE_DIR, 'choijiwon');
 
   const checkDirHasImages = (dir: string): boolean => {
-    if (!fs.existsSync(dir)) return false;
     try {
+      if (!fs.existsSync(dir)) return false;
       const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
       return files.length >= 48;
     } catch (e) {
@@ -216,12 +253,8 @@ async function ensureChoiJiwonImages() {
     }
   };
 
-  const hasPublic = checkDirHasImages(publicDir);
-  const isProduction = process.env.NODE_ENV === "production";
-  const hasDist = !isProduction || checkDirHasImages(distDir);
-
-  if (hasPublic && hasDist) {
-    console.log("Choi Jiwon images are already fully available locally.");
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Choi Jiwon images are already available in one of the search paths.");
     return;
   }
 
@@ -252,10 +285,13 @@ async function ensureChoiJiwonImages() {
       const zip = new AdmZip(buffer);
       const entries = zip.getEntries();
 
-      // Extract to public and dist directories
-      const dirsToExtract = [publicDir];
-      if (isProduction || fs.existsSync(path.join(process.cwd(), 'dist'))) {
-        dirsToExtract.push(distDir);
+      // Extract to public, dist and base writable directories
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
       }
 
       for (const targetDir of dirsToExtract) {
@@ -299,10 +335,11 @@ async function ensureChoiJiwonImages() {
 async function ensureGwangeoImages() {
   const publicDir = path.join(process.cwd(), 'public', 'gwangeoreulchajaseo');
   const distDir = path.join(process.cwd(), 'dist', 'gwangeoreulchajaseo');
+  const tmpDir = path.join(WRITABLE_DIR, 'gwangeoreulchajaseo');
 
   const checkDirHasImages = (dir: string): boolean => {
-    if (!fs.existsSync(dir)) return false;
     try {
+      if (!fs.existsSync(dir)) return false;
       const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
       return files.length >= 48;
     } catch (e) {
@@ -310,12 +347,8 @@ async function ensureGwangeoImages() {
     }
   };
 
-  const hasPublic = checkDirHasImages(publicDir);
-  const isProduction = process.env.NODE_ENV === "production";
-  const hasDist = !isProduction || checkDirHasImages(distDir);
-
-  if (hasPublic && hasDist) {
-    console.log("Gwangeo images are already fully available locally.");
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Gwangeo images are already available in one of the search paths.");
     return;
   }
 
@@ -346,10 +379,13 @@ async function ensureGwangeoImages() {
       const zip = new AdmZip(buffer);
       const entries = zip.getEntries();
 
-      // Extract to public and dist directories
-      const dirsToExtract = [publicDir];
-      if (isProduction || fs.existsSync(path.join(process.cwd(), 'dist'))) {
-        dirsToExtract.push(distDir);
+      // Extract to public, dist and base writable directories
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
       }
 
       for (const targetDir of dirsToExtract) {
@@ -393,10 +429,11 @@ async function ensureGwangeoImages() {
 async function ensureLeeYoonSeopImages() {
   const publicDir = path.join(process.cwd(), 'public', 'leeyoonseop');
   const distDir = path.join(process.cwd(), 'dist', 'leeyoonseop');
+  const tmpDir = path.join(WRITABLE_DIR, 'leeyoonseop');
 
   const checkDirHasImages = (dir: string): boolean => {
-    if (!fs.existsSync(dir)) return false;
     try {
+      if (!fs.existsSync(dir)) return false;
       const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
       return files.length >= 48;
     } catch (e) {
@@ -404,12 +441,8 @@ async function ensureLeeYoonSeopImages() {
     }
   };
 
-  const hasPublic = checkDirHasImages(publicDir);
-  const isProduction = process.env.NODE_ENV === "production";
-  const hasDist = !isProduction || checkDirHasImages(distDir);
-
-  if (hasPublic && hasDist) {
-    console.log("Lee Yoonseop images are already fully available locally.");
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Lee Yoonseop images are already available in one of the search paths.");
     return;
   }
 
@@ -440,10 +473,13 @@ async function ensureLeeYoonSeopImages() {
       const zip = new AdmZip(buffer);
       const entries = zip.getEntries();
 
-      // Extract to public and dist directories
-      const dirsToExtract = [publicDir];
-      if (isProduction || fs.existsSync(path.join(process.cwd(), 'dist'))) {
-        dirsToExtract.push(distDir);
+      // Extract to public, dist and base writable directories
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
       }
 
       for (const targetDir of dirsToExtract) {
@@ -484,16 +520,292 @@ async function ensureLeeYoonSeopImages() {
   }
 }
 
+async function ensureParkGahunImages() {
+  const publicDir = path.join(process.cwd(), 'public', 'parkgahun');
+  const distDir = path.join(process.cwd(), 'dist', 'parkgahun');
+  const tmpDir = path.join(WRITABLE_DIR, 'parkgahun');
+
+  const checkDirHasImages = (dir: string): boolean => {
+    try {
+      if (!fs.existsSync(dir)) return false;
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
+      return files.length >= 48;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Park Gahun images are already available in one of the search paths.");
+    return;
+  }
+
+  if (activeExtractions.parkgahun) {
+    console.log("Park Gahun extraction already in progress. Waiting for it to complete...");
+    return activeExtractions.parkgahun;
+  }
+
+  activeExtractions.parkgahun = (async () => {
+    console.log("Park Gahun images missing or incomplete. Automatically restoring from secure Google Drive backup...");
+    const fileId = "1gn_yeBC8Y3Y4AZHTODZvaJxaEcRUjPUd";
+    const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      if (buffer.length < 5000) {
+        console.log("Failed download from drive (returned HTML error page or short response).");
+        return;
+      }
+
+      const zip = new AdmZip(buffer);
+      const entries = zip.getEntries();
+
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
+      }
+
+      for (const targetDir of dirsToExtract) {
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory) {
+          const tempFileName = entry.entryName.split('/').pop() || '';
+          if (entry.entryName.includes("__MACOSX") || tempFileName.startsWith("._")) {
+            continue;
+          }
+          const match = tempFileName.match(/(\d+)\.png$/i);
+          if (match) {
+            const num = match[1];
+            const fileData = entry.getData();
+            for (const targetDir of dirsToExtract) {
+              fs.writeFileSync(path.join(targetDir, `${num}.png`), fileData);
+            }
+          }
+        }
+      }
+
+      console.log(`Successfully restored Park Gahun's 50 images to ${dirsToExtract.join(' and ')}!`);
+    } catch (err: any) {
+      console.log("Failed to dynamically restore Park Gahun's backup images:", err.message || err);
+      throw err;
+    }
+  })();
+
+  try {
+    await activeExtractions.parkgahun;
+  } finally {
+    activeExtractions.parkgahun = null;
+  }
+}
+
+async function ensureJeonJinhyeokImages() {
+  const publicDir = path.join(process.cwd(), 'public', 'jeonjinhyeok');
+  const distDir = path.join(process.cwd(), 'dist', 'jeonjinhyeok');
+  const tmpDir = path.join(WRITABLE_DIR, 'jeonjinhyeok');
+
+  const checkDirHasImages = (dir: string): boolean => {
+    try {
+      if (!fs.existsSync(dir)) return false;
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
+      return files.length >= 48;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Jeon Jinhyeok images are already available in one of the search paths.");
+    return;
+  }
+
+  if (activeExtractions.jeonjinhyeok) {
+    console.log("Jeon Jinhyeok extraction already in progress. Waiting for it to complete...");
+    return activeExtractions.jeonjinhyeok;
+  }
+
+  activeExtractions.jeonjinhyeok = (async () => {
+    console.log("Jeon Jinhyeok images missing or incomplete. Automatically restoring from secure Google Drive backup...");
+    const fileId = "12UMRpLTRtbkibhALEyRhaEWxeTBYG7hg";
+    const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      if (buffer.length < 5000) {
+        console.log("Failed download from drive (returned HTML error page or short response).");
+        return;
+      }
+
+      const zip = new AdmZip(buffer);
+      const entries = zip.getEntries();
+
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
+      }
+
+      for (const targetDir of dirsToExtract) {
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory) {
+          const tempFileName = entry.entryName.split('/').pop() || '';
+          if (entry.entryName.includes("__MACOSX") || tempFileName.startsWith("._")) {
+            continue;
+          }
+          const match = tempFileName.match(/(\d+)\.png$/i);
+          if (match) {
+            const num = match[1];
+            const fileData = entry.getData();
+            for (const targetDir of dirsToExtract) {
+              fs.writeFileSync(path.join(targetDir, `${num}.png`), fileData);
+            }
+          }
+        }
+      }
+
+      console.log(`Successfully restored Jeon Jinhyeok's 50 images to ${dirsToExtract.join(' and ')}!`);
+    } catch (err: any) {
+      console.log("Failed to dynamically restore Jeon Jinhyeok's backup images:", err.message || err);
+      throw err;
+    }
+  })();
+
+  try {
+    await activeExtractions.jeonjinhyeok;
+  } finally {
+    activeExtractions.jeonjinhyeok = null;
+  }
+}
+
+async function ensureJeongPyeonganImages() {
+  const publicDir = path.join(process.cwd(), 'public', 'jeongpyeongan');
+  const distDir = path.join(process.cwd(), 'dist', 'jeongpyeongan');
+  const tmpDir = path.join(WRITABLE_DIR, 'jeongpyeongan');
+
+  const checkDirHasImages = (dir: string): boolean => {
+    try {
+      if (!fs.existsSync(dir)) return false;
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
+      return files.length >= 48;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  if (checkDirHasImages(tmpDir) || checkDirHasImages(publicDir) || checkDirHasImages(distDir)) {
+    console.log("Jeong Pyeongan images are already available in one of the search paths.");
+    return;
+  }
+
+  if (activeExtractions.jeongpyeongan) {
+    console.log("Jeong Pyeongan extraction already in progress. Waiting for it to complete...");
+    return activeExtractions.jeongpyeongan;
+  }
+
+  activeExtractions.jeongpyeongan = (async () => {
+    console.log("Jeong Pyeongan images missing or incomplete. Automatically restoring from secure Google Drive backup...");
+    const fileId = "1hdkBAyjpbCv6lJkQbXNdM1BYK2M2x_lZ";
+    const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      if (buffer.length < 5000) {
+        console.log("Failed download from drive (returned HTML error page or short response).");
+        return;
+      }
+
+      const zip = new AdmZip(buffer);
+      const entries = zip.getEntries();
+
+      const dirsToExtract = [tmpDir];
+      if (!isCloudRun) {
+        dirsToExtract.push(publicDir);
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          dirsToExtract.push(distDir);
+        }
+      }
+
+      for (const targetDir of dirsToExtract) {
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory) {
+          const tempFileName = entry.entryName.split('/').pop() || '';
+          if (entry.entryName.includes("__MACOSX") || tempFileName.startsWith("._")) {
+            continue;
+          }
+          const match = tempFileName.match(/(\d+)\.png$/i);
+          if (match) {
+            const num = match[1];
+            const fileData = entry.getData();
+            for (const targetDir of dirsToExtract) {
+              fs.writeFileSync(path.join(targetDir, `${num}.png`), fileData);
+            }
+          }
+        }
+      }
+
+      console.log(`Successfully restored Jeong Pyeongan's 50 images to ${dirsToExtract.join(' and ')}!`);
+    } catch (err: any) {
+      console.log("Failed to dynamically restore Jeong Pyeongan's backup images:", err.message || err);
+      throw err;
+    }
+  })();
+
+  try {
+    await activeExtractions.jeongpyeongan;
+  } finally {
+    activeExtractions.jeongpyeongan = null;
+  }
+}
+
 async function startServer() {
   const app = express();
   
-  // Port detection logic:
-  // Bind to port 3000 in development, but use process.env.PORT in production for Cloud Run
-  const isDev = process.env.NODE_ENV !== "production";
-  const PORT = isDev ? 3000 : Number(process.env.PORT || 8080);
+  // 2. Port assignment logic: Respect process.env.PORT if specified (crucial for Cloud Run and workspace verification), otherwise fallback to the standard port 3000
+  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
-  console.log(`[Startup] Mode: ${isDev ? 'Development/Shared' : 'Production (Cloud Run)'}`);
-  console.log(`[Startup] Port: ${PORT} (from PORT_ENV=${process.env.PORT}, DEFAULT_APP_PORT=${process.env.DEFAULT_APP_PORT}, NODE_ENV=${process.env.NODE_ENV})`);
+  console.log(`[Startup] Mode: ${isRealProduction ? 'Production (Cloud Run)' : 'Development/Shared'} (isStudioWorkspace=${isStudioWorkspace})`);
+  console.log(`[Startup] Port: ${PORT} (from PORT_ENV=${process.env.PORT})`);
+  console.log(`[Startup] Writable Storage: ${WRITABLE_DIR}`);
+  console.log(`[Startup] Writable Dir: ${WRITABLE_DIR}`);
 
   app.use(express.json({ limit: '10mb' }));
   app.get("/api/health", (req, res) => { res.json({ status: "ok" }); });
@@ -507,10 +819,20 @@ async function startServer() {
   });
 
   // On-demand static image loader and extractor
+  // Define static asset search paths including the writable temporary directory
   const handleOnDemandAsset = async (folder: string, filename: string, res: any, next: any) => {
     const publicPath = path.join(process.cwd(), 'public', folder, filename);
     const distPath = path.join(process.cwd(), 'dist', folder, filename);
-    const chosenPath = fs.existsSync(publicPath) ? publicPath : (fs.existsSync(distPath) ? distPath : null);
+    const tmpPath = path.join(WRITABLE_DIR, folder, filename);
+    
+    let chosenPath = null;
+    if (fs.existsSync(tmpPath)) {
+      chosenPath = tmpPath;
+    } else if (fs.existsSync(publicPath)) {
+      chosenPath = publicPath;
+    } else if (fs.existsSync(distPath)) {
+      chosenPath = distPath;
+    }
 
     if (chosenPath) {
       return res.sendFile(chosenPath);
@@ -524,9 +846,15 @@ async function startServer() {
         await ensureGwangeoImages();
       } else if (folder === 'leeyoonseop') {
         await ensureLeeYoonSeopImages();
+      } else if (folder === 'parkgahun') {
+        await ensureParkGahunImages();
+      } else if (folder === 'jeonjinhyeok') {
+        await ensureJeonJinhyeokImages();
+      } else if (folder === 'jeongpyeongan') {
+        await ensureJeongPyeonganImages();
       }
       
-      const newChosenPath = fs.existsSync(publicPath) ? publicPath : (fs.existsSync(distPath) ? distPath : null);
+      const newChosenPath = fs.existsSync(tmpPath) ? tmpPath : (fs.existsSync(publicPath) ? publicPath : (fs.existsSync(distPath) ? distPath : null));
       if (newChosenPath) {
         return res.sendFile(newChosenPath);
       }
@@ -545,16 +873,20 @@ async function startServer() {
   app.get('/leeyoonseop/:filename', (req, res, next) => {
     handleOnDemandAsset('leeyoonseop', req.params.filename, res, next);
   });
+  app.get('/parkgahun/:filename', (req, res, next) => {
+    handleOnDemandAsset('parkgahun', req.params.filename, res, next);
+  });
+  app.get('/jeonjinhyeok/:filename', (req, res, next) => {
+    handleOnDemandAsset('jeonjinhyeok', req.params.filename, res, next);
+  });
+  app.get('/jeongpyeongan/:filename', (req, res, next) => {
+    handleOnDemandAsset('jeongpyeongan', req.params.filename, res, next);
+  });
 
-  // API Route to serve the live global image map dynamically from disk
+  // API Route to serve the live global image map dynamically from bundled data
   app.get("/api/global-image-map", (req, res) => {
     try {
-      const mapFilePath = path.join(process.cwd(), "src", "data", "globalImageMap.json");
-      if (fs.existsSync(mapFilePath)) {
-        const data = fs.readFileSync(mapFilePath, "utf8");
-        return res.json(JSON.parse(data));
-      }
-      return res.status(404).json({ error: "Image map file not found" });
+      return res.json(globalImageMap);
     } catch (err) {
       console.error("Error serving /api/global-image-map:", err);
       res.status(500).json({ error: "Server error reading image map" });
@@ -590,6 +922,12 @@ async function startServer() {
           await ensureGwangeoImages();
         } else if (folder === 'leeyoonseop') {
           await ensureLeeYoonSeopImages();
+        } else if (folder === 'parkgahun') {
+          await ensureParkGahunImages();
+        } else if (folder === 'jeonjinhyeok') {
+          await ensureJeonJinhyeokImages();
+        } else if (folder === 'jeongpyeongan') {
+          await ensureJeongPyeonganImages();
         }
       } catch (err) {
         console.error(`Failed to ensure images for ${folder} on API request:`, err);
@@ -600,7 +938,8 @@ async function startServer() {
 
     const searchDirs = [
       path.join(process.cwd(), "public"),
-      path.join(process.cwd(), "dist")
+      path.join(process.cwd(), "dist"),
+      WRITABLE_DIR
     ];
 
     let matchedDir: string | null = null;
@@ -699,6 +1038,11 @@ async function startServer() {
             const isChoiJiwonName = (predefinedUser && predefinedUser.folderName === "choijiwon") || normName === "최지원" || normNameNFD === "최지원".normalize("NFD") || normName.toLowerCase() === "choijiwon" || normName.toLowerCase() === "choi jiwon" || normName.replace(/\s+/g, "") === "최지원";
             const isLeeYoonSeopName = (predefinedUser && predefinedUser.folderName === "leeyoonseop") || normName === "이윤섭" || normNameNFD === "이윤섭".normalize("NFD") || normName.toLowerCase() === "leeyoonseop" || normName.toLowerCase() === "lee yoonseop" || normName.replace(/\s+/g, "") === "이윤섭" || normName === "이윤서" || normNameNFD === "이윤서".normalize("NFD") || normName.toLowerCase() === "leeyoonseo" || normName.replace(/\s+/g, "") === "이윤서";
             const isGwangeoName = (predefinedUser && predefinedUser.folderName === "gwangeoreulchajaseo") || normName === "광어를 찾아서" || normNameNFD === "광어를 찾아서".normalize("NFD") || normName.toLowerCase() === "gwangeoreulchajaseo" || normName.toLowerCase() === "gwangeo" || normName.replace(/\s+/g, "") === "광어를찾아서";
+            const isGahunName = (predefinedUser && predefinedUser.folderName === "parkgahun") || normName === "박가현" || normNameNFD === "박가현".normalize("NFD") || normName.toLowerCase() === "parkgahun" || normName.replace(/\s+/g, "") === "박가현";
+            const isJikhyeokName = (predefinedUser && predefinedUser.folderName === "jeonjinhyeok") || normName === "전진혁" || normNameNFD === "전진혁".normalize("NFD") || normName.toLowerCase() === "jeonjinhyeok" || normName.replace(/\s+/g, "") === "전진혁";
+            const isPyeonganName = (predefinedUser && predefinedUser.folderName === "jeongpyeongan") || normName === "정평안" || normNameNFD === "정평안".normalize("NFD") || normName.toLowerCase() === "jeongpyeongan" || normName.replace(/\s+/g, "") === "정평안";
+
+            const isPredefinedName = isChoiJiwonName || isLeeYoonSeopName || isGwangeoName || isGahunName || isJikhyeokName || isPyeonganName;
 
             if (isChoiJiwonName) {
               const sheetRow = rawChoiJiwonSheet.find((r: any) => r.num === imageNumber);
@@ -726,6 +1070,45 @@ async function startServer() {
               }
             } else if (isGwangeoName) {
               const sheetRow = rawGwangeoSheet.find((r: any) => r.num === imageNumber);
+              if (sheetRow) {
+                activeTrait = sheetRow.main;
+                traits.forEach(t => {
+                  categoryWeights[t] = 10 + (imageNumber * t.charCodeAt(0)) % 16;
+                });
+                categoryWeights[sheetRow.main] = 95;
+                categoryWeights[sheetRow.sub1] = 75;
+                if (sheetRow.sub2) {
+                  categoryWeights[sheetRow.sub2] = 55;
+                }
+              }
+            } else if (isGahunName) {
+              const sheetRow = rawGahunSheet.find((r: any) => r.num === imageNumber);
+              if (sheetRow) {
+                activeTrait = sheetRow.main;
+                traits.forEach(t => {
+                  categoryWeights[t] = 10 + (imageNumber * t.charCodeAt(0)) % 16;
+                });
+                categoryWeights[sheetRow.main] = 95;
+                categoryWeights[sheetRow.sub1] = 75;
+                if (sheetRow.sub2) {
+                  categoryWeights[sheetRow.sub2] = 55;
+                }
+              }
+            } else if (isJikhyeokName) {
+              const sheetRow = rawJikhyeokSheet.find((r: any) => r.num === imageNumber);
+              if (sheetRow) {
+                activeTrait = sheetRow.main;
+                traits.forEach(t => {
+                  categoryWeights[t] = 10 + (imageNumber * t.charCodeAt(0)) % 16;
+                });
+                categoryWeights[sheetRow.main] = 95;
+                categoryWeights[sheetRow.sub1] = 75;
+                if (sheetRow.sub2) {
+                  categoryWeights[sheetRow.sub2] = 55;
+                }
+              }
+            } else if (isPyeonganName) {
+              const sheetRow = rawPyeonganSheet.find((r: any) => r.num === imageNumber);
               if (sheetRow) {
                 activeTrait = sheetRow.main;
                 traits.forEach(t => {
@@ -771,7 +1154,7 @@ async function startServer() {
                   categoryWeights[t] = 10 + (imageNumber * t.charCodeAt(0)) % 16;
                 }
               });
-            } else if (!isChoiJiwonName && !isLeeYoonSeopName && !isGwangeoName) {
+            } else if (!isPredefinedName) {
               traits.forEach(t => {
                 if (categoryWeights[t] === undefined) {
                   categoryWeights[t] = 5;
@@ -813,10 +1196,27 @@ async function startServer() {
       const isChoiJiwonName = (predefinedUser && predefinedUser.folderName === "choijiwon") || normName === "최지원" || normNameNFD === "최지원".normalize("NFD") || normName.toLowerCase() === "choijiwon" || normName.toLowerCase() === "choi jiwon" || normName.replace(/\s+/g, "") === "최지원";
       const isLeeYoonSeopName = (predefinedUser && predefinedUser.folderName === "leeyoonseop") || normName === "이윤섭" || normNameNFD === "이윤섭".normalize("NFD") || normName.toLowerCase() === "leeyoonseop" || normName.toLowerCase() === "lee yoonseop" || normName.replace(/\s+/g, "") === "이윤섭" || normName === "이윤서" || normNameNFD === "이윤서".normalize("NFD") || normName.toLowerCase() === "leeyoonseo" || normName.replace(/\s+/g, "") === "이윤서";
       const isGwangeoName = (predefinedUser && predefinedUser.folderName === "gwangeoreulchajaseo") || normName === "광어를 찾아서" || normNameNFD === "광어를 찾아서".normalize("NFD") || normName.toLowerCase() === "gwangeoreulchajaseo" || normName.toLowerCase() === "gwangeo" || normName.replace(/\s+/g, "") === "광어를찾아서";
+      const isGahunName = (predefinedUser && predefinedUser.folderName === "parkgahun") || normName === "박가현" || normNameNFD === "박가현".normalize("NFD") || normName.toLowerCase() === "parkgahun" || normName.replace(/\s+/g, "") === "박가현";
+      const isJikhyeokName = (predefinedUser && predefinedUser.folderName === "jeonjinhyeok") || normName === "전진혁" || normNameNFD === "전진혁".normalize("NFD") || normName.toLowerCase() === "jeonjinhyeok" || normName.replace(/\s+/g, "") === "전진혁";
+      const isPyeonganName = (predefinedUser && predefinedUser.folderName === "jeongpyeongan") || normName === "정평안" || normNameNFD === "정평안".normalize("NFD") || normName.toLowerCase() === "jeongpyeongan" || normName.replace(/\s+/g, "") === "정평안";
+
+      const isPredefinedName = isChoiJiwonName || isLeeYoonSeopName || isGwangeoName || isGahunName || isJikhyeokName || isPyeonganName;
 
       const fallbackUrl = isGwangeoName 
         ? `/gwangeoreulchajaseo/${idx}.png` 
-        : (isLeeYoonSeopName ? `/leeyoonseop/${idx}.png` : `/choijiwon/${idx}.png`);
+        : (isLeeYoonSeopName 
+            ? `/leeyoonseop/${idx}.png` 
+            : (isGahunName 
+                ? `/parkgahun/${idx}.png` 
+                : (isJikhyeokName 
+                    ? `/jeonjinhyeok/${idx}.png` 
+                    : (isPyeonganName 
+                        ? `/jeongpyeongan/${idx}.png` 
+                        : `/choijiwon/${idx}.png`
+                      )
+                  )
+              )
+          );
 
       let activeTrait = koreanTrait;
 
@@ -857,6 +1257,45 @@ async function startServer() {
             categoryWeights[sheetRow.sub2] = 55;
           }
         }
+      } else if (isGahunName) {
+        const sheetRow = rawGahunSheet.find((r: any) => r.num === idx);
+        if (sheetRow) {
+          activeTrait = sheetRow.main;
+          fallbackTraits.forEach(t => {
+            categoryWeights[t] = 10 + (idx * t.charCodeAt(0)) % 16;
+          });
+          categoryWeights[sheetRow.main] = 95;
+          categoryWeights[sheetRow.sub1] = 75;
+          if (sheetRow.sub2) {
+            categoryWeights[sheetRow.sub2] = 55;
+          }
+        }
+      } else if (isJikhyeokName) {
+        const sheetRow = rawJikhyeokSheet.find((r: any) => r.num === idx);
+        if (sheetRow) {
+          activeTrait = sheetRow.main;
+          fallbackTraits.forEach(t => {
+            categoryWeights[t] = 10 + (idx * t.charCodeAt(0)) % 16;
+          });
+          categoryWeights[sheetRow.main] = 95;
+          categoryWeights[sheetRow.sub1] = 75;
+          if (sheetRow.sub2) {
+            categoryWeights[sheetRow.sub2] = 55;
+          }
+        }
+      } else if (isPyeonganName) {
+        const sheetRow = rawPyeonganSheet.find((r: any) => r.num === idx);
+        if (sheetRow) {
+          activeTrait = sheetRow.main;
+          fallbackTraits.forEach(t => {
+            categoryWeights[t] = 10 + (idx * t.charCodeAt(0)) % 16;
+          });
+          categoryWeights[sheetRow.main] = 95;
+          categoryWeights[sheetRow.sub1] = 75;
+          if (sheetRow.sub2) {
+            categoryWeights[sheetRow.sub2] = 55;
+          }
+        }
       } else if (globalCfg.weights) {
         fallbackTraits.forEach(t => {
           if (globalCfg.weights![t] !== undefined) {
@@ -871,7 +1310,7 @@ async function startServer() {
         categoryWeights[secondTrait] = 45 + (idx * 11) % 31;
       }
 
-      if (!isChoiJiwonName && !isLeeYoonSeopName && !isGwangeoName) {
+      if (!isPredefinedName) {
         fallbackTraits.forEach(t => {
           if (categoryWeights[t] === undefined) {
             categoryWeights[t] = 10 + (idx * t.charCodeAt(0)) % 16;
@@ -1216,9 +1655,10 @@ Response JSON Format:
     }
   });
 
-  const RESULTS_FILE_PATH = path.join(process.cwd(), "src", "data", "completed_results.json");
+  const RESULTS_FILE_PATH = path.join(WRITABLE_DIR, "completed_results.json");
 
   function writeCompletedResults(results: any[]) {
+    if (isCloudRun) return; // Skip local file writing in Cloud Run
     try {
       const dir = path.dirname(RESULTS_FILE_PATH);
       if (!fs.existsSync(dir)) {
@@ -1465,6 +1905,11 @@ Response JSON Format:
       }
 
       const mapFilePath = path.join(process.cwd(), "src", "data", "globalImageMap.json");
+      if (isCloudRun) {
+        console.warn("[Admin Image Map] Skipping local file write in production.");
+        userImagesCache.clear();
+        return res.json({ success: true, warning: "Stored in memory for this session (Firestore persistence pending)" });
+      }
       const dir = path.dirname(mapFilePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -1593,7 +2038,7 @@ Response JSON Format:
   });
 
   // Vite middleware for development or static file serving
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !isProdRun) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { 
@@ -1606,8 +2051,12 @@ Response JSON Format:
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     const publicPath = path.join(process.cwd(), 'public');
-    app.use(express.static(publicPath));
+    
+    // Serve from build outputs AND the writable temporary storage
     app.use(express.static(distPath));
+    app.use(express.static(publicPath));
+    app.use(express.static(WRITABLE_DIR));
+    
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

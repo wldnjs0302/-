@@ -1,8 +1,18 @@
 import choiJiwonAnalyzed from "./choijiwon_analyzed.json";
 import leeYoonSeopAnalyzed from "./leeyoonseop_analyzed.json";
 import gwangeoAnalyzed from "./gwangeo_analyzed.json";
+import parkgahunAnalyzed from "./parkgahun_analyzed.json";
+import jeonjinhyeokAnalyzed from "./jeonjinhyeok_analyzed.json";
+import jeongpyeonganAnalyzed from "./jeongpyeongan_analyzed.json";
 import rawGwangeoSheet from "./rawGwangeo.json";
-import { rawChoiJiwonSheet, rawLeeYoonSeopSheet, findPredefinedUser } from "./userMapping";
+import {
+  rawChoiJiwonSheet,
+  rawLeeYoonSeopSheet,
+  rawGahunSheet,
+  rawJikhyeokSheet,
+  rawPyeonganSheet,
+  findPredefinedUser
+} from "./userMapping";
 
 function getPostposition(word: string, type: "이_가" | "은_는" | "을_를"): string {
   if (!word) return "";
@@ -80,14 +90,85 @@ export function getImgNumFromId(id: string, fallbackIdx?: number, url?: string):
 
 export function getPredefinedImageInfo(imgNum: number, userName: string): { subject: string; feature: string; focus: string } {
   const predefinedUser = findPredefinedUser(userName);
-  const isLeeYoonSeop = predefinedUser && predefinedUser.folderName === "leeyoonseop";
-  const isGwangeo = predefinedUser && predefinedUser.folderName === "gwangeoreulchajaseo";
+  const folder = predefinedUser?.folderName;
 
-  if (isGwangeo) {
+  if (folder === "gwangeoreulchajaseo") {
     return (gwangeoAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  } else if (folder === "leeyoonseop") {
+    return (leeYoonSeopAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  } else if (folder === "parkgahun") {
+    return (parkgahunAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  } else if (folder === "jeonjinhyeok") {
+    return (jeonjinhyeokAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  } else if (folder === "jeongpyeongan") {
+    return (jeongpyeonganAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
   } else {
-    const analyzedData = isLeeYoonSeop ? leeYoonSeopAnalyzed : choiJiwonAnalyzed;
-    return (analyzedData as any)[String(imgNum)] || imgData[imgNum] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+    return (choiJiwonAnalyzed as any)[String(imgNum)] || imgData[imgNum] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  }
+}
+
+export function getDiverseFocusText(imgNum: number, userName: string, main: string, sub1: string, sub2: string): string {
+  const normMain = normalizeTrait(main);
+  const normSub1 = normalizeTrait(sub1);
+  const normSub2 = normalizeTrait(sub2 || "");
+  const code = (imgNum + normMain.charCodeAt(0)) % 6;
+
+  const patterns = [
+    `메인 결과로 꼽힌 '${normMain}'의 본질적인 형태가 뚜렷이 도드라지는 동시에, 보완 성향인 '${normSub1}'와 '${normSub2}'의 기하학적 배치가 완벽한 레이아웃적 정합성을 수립하고 있습니다.`,
+    `핵심 테마인 '${normMain}'의 구조적 선명성을 중심으로, 보조 지표인 '${normSub1}'적 디테일과 '${normSub2}'의 세밀한 결이 하나의 우아한 시각적 앙상블을 이룹니다.`,
+    `가장 정점에 위치한 '${normMain}'적 시선 위로, '${normSub1}'의 세밀한 물성과 '${normSub2}'의 명료한 균형이 더해져 단조로운 일상 속 사물을 매혹적인 예술 오브제로 승화시킵니다.`,
+    `직관적으로 포착된 '${normMain}'의 본질이 깊고 그윽하게 흐르고, 이를 정교하게 받쳐주는 '${normSub1}'적 정렬과 '${normSub2}'의 세련된 조형미가 탁월한 기품을 완성합니다.`,
+    `공간을 지배하는 '${normMain}'적 에너지가 뚜렷한 존재감을 드러내고, '${normSub1}'과 '${normSub2}'의 유기적 상호작용이 화면 전반에 잔잔한 명상적 리듬과 구조의 쾌감을 불어넣습니다.`,
+    `'${normMain}'적 요소의 엄격한 질서감이 시선을 붙잡는 가운데, 보완 축인 '${normSub1}'의 깊이감과 '${normSub2}'의 정돈된 비례가 정갈하고 세련된 미적 정체성을 공고히 구축합니다.`
+  ];
+
+  return patterns[code];
+}
+
+export function getDiverseRelationText(imgNum: number, trait: string, userName: string, roleType: 'main' | 'sub1' | 'sub2' | 'other'): string {
+  const normTrait = normalizeTrait(trait);
+  const code = (imgNum + normTrait.charCodeAt(0)) % 6;
+
+  if (roleType === 'main') {
+    const patterns = [
+      `이 프레임은 ${userName}님이 가장 본능적으로 감지하고 지향하는 '${normTrait}'의 미학적 정수를 선명하게 비추어 줍니다.`,
+      `가장 본질적인 관점으로서의 '${normTrait}'적 가치가 화면의 중심에서 입체감 있게 살아나며, ${userName}님만의 독보적인 안목을 대변하고 있습니다.`,
+      `대상을 투영하는 과정에서 '${normTrait}' 성향이 주도적인 시각 언어로 작동하여, ${userName}님의 지각적 중심축을 견고하게 지탱합니다.`,
+      `이는 일상의 시공간 속에서 '${normTrait}'적 가치를 예민하게 판독해내는 ${userName}님의 고유하고 주도적인 탐색 방식에 닿아 있습니다.`,
+      `화면 전체를 관통하는 '${normTrait}'의 확고한 질서는 ${userName}님이 세상을 설계하고 구축하는 인지적 완결성을 증명해 줍니다.`,
+      `풍부한 조형적 흐름 속에서 '${normTrait}'적 특징이 시각적 주인공으로 우뚝 서며, ${userName}님의 예술적 서사를 묵묵히 전개해나갑니다.`
+    ];
+    return patterns[code];
+  } else if (roleType === 'sub1') {
+    const patterns = [
+      `부차적이면서도 조화로운 '${normTrait}'의 보조적 흐름이 전체적인 미학 구도를 한층 성숙하고 균형감 있게 보완해 줍니다.`,
+      `메인 요소를 긴밀히 보좌하는 '${normTrait}'의 결합은, 사물에 내재된 숨은 맥락을 입체적으로 풀어내는 보완적 장치가 됩니다.`,
+      `배경 속에 투영된 '${normTrait}'의 미세한 파편들이 은은한 잔상처럼 번지며 깊이 있는 시각적 여백을 선사합니다.`,
+      `1차 보완 성향으로서의 '${normTrait}'적 디테일이 적재적소에 정렬되어, 프레임이 가질 수 있는 단조로움을 우아하게 극복해 줍니다.`,
+      `'${normTrait}'적 감각이 은근한 존재감으로 개입함으로써, 관찰하는 이의 시선에 편안하고도 정밀한 사유의 틈을 열어줍니다.`,
+      `주요 개념을 섬세하게 에워싸는 '${normTrait}'의 조율 방식은, 조형물의 구조적 견고함을 배후에서 완성하는 단초가 됩니다.`
+    ];
+    return patterns[code];
+  } else if (roleType === 'sub2') {
+    const patterns = [
+      `'${normTrait}'의 정교한 결합을 통해 시선이 머무는 세부적인 지점마다 밀도 높은 완성도와 짜임새를 배가시킵니다.`,
+      `마지막 퍼즐처럼 안착된 '${normTrait}'의 광학적 변주가 조용한 균형을 완성하며 한결 깊어진 감각적 울림을 자아냅니다.`,
+      `'${normTrait}'적 디테일이 화면 구석구석 유기적으로 스며들어, 시각적 단단함과 미시적 조화로움을 고조해 줍니다.`,
+      `이 섬세한 정렬 속에서 '${normTrait}'의 잔잔한 파동이 교차하며, 일상적 소재를 특별한 예술적 아카이브로 정화합니다.`,
+      `'${normTrait}'의 정밀한 레이어가 레이아웃의 끝자락을 포근히 감싸 안으며 정갈하고 신뢰감 있는 구조를 보여줍니다.`,
+      `'${normTrait}'적 요소의 밀도 있는 조율은, 사소한 픽셀과 여백 속에서도 완결성을 관철시키는 예리한 감각의 반증입니다.`
+    ];
+    return patterns[code];
+  } else {
+    const patterns = [
+      `잠재된 '${normTrait}' 성향과의 시각적인 연결고리를 섬세하게 드러내며 조화로운 조형미를 이끌어냅니다.`,
+      `비록 숨겨진 이면의 영역이지만, '${normTrait}'적 가치가 잔잔하게 스며들어 화면의 다채로움을 풍성하게 지탱해 줍니다.`,
+      `'${normTrait}'의 기하학적 요소가 변두리에서 조용한 밸런서를 자처하며 전체 프레임에 입체적인 기품을 선물합니다.`,
+      `내밀한 감각적 변조로서의 '${normTrait}' 성향이 은밀히 기능하여, 다각적인 사유의 재미를 부여하는 훌륭한 촉매가 됩니다.`,
+      `직접적으로 드러나지 않는 '${normTrait}'적 호흡이 화면 배후의 잔잔한 긴장감을 유지하며 관찰을 흥미롭게 돕습니다.`,
+      `'${normTrait}'적 결이 보이지 않는 축으로 작동하여, 이미지 전체가 자아내는 객관적 서사를 차분하게 지지해 줍니다.`
+    ];
+    return patterns[code];
   }
 }
 
@@ -97,7 +178,7 @@ export function getImageSpecificExplanation(
   userName: string,
   fullId?: string,
   url?: string
-): { title: string; desc: string; detail: string } {
+): { title: string; desc: string; detail: string; hashtags?: string[] } {
   const normTrait = normalizeTrait(trait);
   const imgNum = typeof idOrNum === "number" ? idOrNum : getImgNumFromId(idOrNum, undefined, url);
 
@@ -185,25 +266,35 @@ export function getImageSpecificExplanation(
 
   // Predefined image configuration handling using matching user's sheet mapping!
   const predefinedUser = findPredefinedUser(userName);
-  const isLeeYoonSeop = predefinedUser && predefinedUser.folderName === "leeyoonseop";
-  const isGwangeo = predefinedUser && predefinedUser.folderName === "gwangeoreulchajaseo";
+  const folder = predefinedUser?.folderName;
 
-  const rawSheet = isGwangeo 
-    ? rawGwangeoSheet 
-    : (isLeeYoonSeop ? rawLeeYoonSeopSheet : rawChoiJiwonSheet);
+  let rawSheet = rawChoiJiwonSheet;
+  let analyzedData: Record<string, any> = choiJiwonAnalyzed;
 
-  let current: any;
-  if (isGwangeo) {
-    current = (gwangeoAnalyzed as any)[String(imgNum)] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
-  } else {
-    const analyzedData = isLeeYoonSeop ? leeYoonSeopAnalyzed : choiJiwonAnalyzed;
-    current = (analyzedData as any)[String(imgNum)] || imgData[imgNum] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
+  if (folder === "gwangeoreulchajaseo") {
+    rawSheet = rawGwangeoSheet;
+    analyzedData = gwangeoAnalyzed;
+  } else if (folder === "leeyoonseop") {
+    rawSheet = rawLeeYoonSeopSheet;
+    analyzedData = leeYoonSeopAnalyzed;
+  } else if (folder === "parkgahun") {
+    rawSheet = rawGahunSheet;
+    analyzedData = parkgahunAnalyzed;
+  } else if (folder === "jeonjinhyeok") {
+    rawSheet = rawJikhyeokSheet;
+    analyzedData = jeonjinhyeokAnalyzed;
+  } else if (folder === "jeongpyeongan") {
+    rawSheet = rawPyeonganSheet;
+    analyzedData = jeongpyeonganAnalyzed;
   }
+
+  let current = (analyzedData as any)[String(imgNum)] || imgData[imgNum] || { subject: "미학적 피사체", feature: "조화로운 비주얼 요소", focus: "세밀한 형태적 조화" };
 
   const sheetRow = rawSheet.find((r: any) => r.num === imgNum);
 
   let relationText = "";
   let roleTitle = "";
+  let roleType: 'main' | 'sub1' | 'sub2' | 'other' = 'other';
 
   if (sheetRow) {
     const mainTrait = normalizeTrait(sheetRow.main);
@@ -212,36 +303,81 @@ export function getImageSpecificExplanation(
 
     if (mainTrait === normTrait) {
       roleTitle = "주요 성향 지표";
-      relationText = `이는 ${userName}님의 주요 성향인 '${normTrait}' 특징을 뚜렷하게 보여줍니다.`;
+      roleType = 'main';
     } else if (sub1Trait === normTrait) {
       roleTitle = "보조 성향 지표 (1차)";
-      relationText = `'${normTrait}' 요소를 통해 전반적인 조화로움을 보완합니다.`;
+      roleType = 'sub1';
     } else if (sub2Trait === normTrait) {
       roleTitle = "보조 성향 지표 (2차)";
-      relationText = `'${normTrait}' 요소를 세밀하게 결합하여 완성도를 더해줍니다.`;
+      roleType = 'sub2';
     } else {
       roleTitle = "보완 지표";
-      relationText = `잠재된 '${normTrait}' 성향과의 시각적인 연결고리를 보여줍니다.`;
+      roleType = 'other';
     }
   } else {
     roleTitle = `${normTrait}적 지표`;
-    relationText = `'${normTrait}'적 특징이 시각적으로 조화롭게 반영되어 있습니다.`;
+    roleType = 'other';
   }
+
+  relationText = getDiverseRelationText(imgNum, trait, userName, roleType);
 
   const subjectText = current.subject;
   const featureText = current.feature.trim();
-  const focusText = current.focus.trim();
+  
+  let cleanFocus = current.focus.trim();
+  const hasCustomFocus = ["gwangeoreulchajaseo", "leeyoonseop", "parkgahun", "jeonjinhyeok", "jeongpyeongan"].includes(folder || "");
+  if (!hasCustomFocus && sheetRow) {
+    cleanFocus = getDiverseFocusText(imgNum, userName, sheetRow.main, sheetRow.sub1, sheetRow.sub2);
+  }
 
   const cleanFeature = featureText.endsWith(".") ? featureText : featureText + ".";
-  const cleanFocus = focusText.endsWith(".") ? focusText : focusText + ".";
+  if (!cleanFocus.endsWith(".")) {
+    cleanFocus += ".";
+  }
+
+  const starterPatterns = [
+    `'${subjectText}'을 정밀하게 포착해낸 시각적 구성입니다.`,
+    `'${subjectText}'의 미학적 앵글을 차분히 담아낸 프레임입니다.`,
+    `일상의 단상 속에서 발견한 '${subjectText}'의 독창적인 시선입니다.`,
+    `'${subjectText}'을 묘사한 세련되고 깊이 있는 이미지입니다.`,
+    `'${subjectText}'의 조형적 가치와 디테일이 돋보이는 비주얼입니다.`
+  ];
+  const starter = starterPatterns[imgNum % 5];
 
   const customTitle = `${subjectText} [${roleTitle}]`;
-  const customDesc = `'${subjectText}'을 묘사한 이미지입니다. ${cleanFeature} 특히 ${cleanFocus} ${relationText}`;
+  const customDesc = `${starter} ${cleanFeature} 특히 ${cleanFocus} ${relationText}`;
   const customDetail = `이 이미지는 ${userName}님의 ${normTrait} 성향을 분석하기 위한 지표입니다.`;
 
   return {
     title: customTitle,
     desc: customDesc,
-    detail: customDetail
+    detail: customDetail,
+    hashtags: getImageHashtags(imgNum, folder)
   };
 }
+
+export function getImageHashtags(imgNum: number, folder?: string): string[] {
+  if (folder === "gwangeoreulchajaseo") {
+    const row = rawGwangeoSheet.find((r: any) => r.num === imgNum);
+    if (row && row.tags) {
+      return row.tags.map((t: string) => t.startsWith("#") ? t : `#${t}`);
+    }
+  }
+
+  let analyzedData = null;
+  if (folder === "leeyoonseop") analyzedData = leeYoonSeopAnalyzed;
+  else if (folder === "parkgahun") analyzedData = parkgahunAnalyzed;
+  else if (folder === "jeonjinhyeok") analyzedData = jeonjinhyeokAnalyzed;
+  else if (folder === "jeongpyeongan") analyzedData = jeongpyeonganAnalyzed;
+  else analyzedData = choiJiwonAnalyzed;
+
+  if (analyzedData) {
+    const current = (analyzedData as any)[String(imgNum)];
+    if (current && current.hashtags) {
+      return current.hashtags.map((t: string) => t.startsWith("#") ? t : `#${t}`);
+    }
+  }
+
+  return [];
+}
+

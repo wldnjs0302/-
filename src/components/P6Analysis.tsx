@@ -872,7 +872,8 @@ export const getImageNumAndInfo = (
         return {
           title: explanation.title,
           desc: explanation.desc,
-          detail: explanation.detail
+          detail: explanation.detail,
+          hashtags: (explanation as any).hashtags
         };
       }
     } catch (err) {
@@ -885,7 +886,8 @@ export const getImageNumAndInfo = (
       return {
         title: localDesc.title,
         desc: localDesc.desc,
-        detail: localDesc.detail || `이 이미지는 당신의 ${img.trait || "내면"}적 감각과 정합하는 소중한 조형적 지표입니다.`
+        detail: localDesc.detail || `이 이미지는 당신의 ${img.trait || "내면"}적 감각과 정합하는 소중한 조형적 지표입니다.`,
+        hashtags: (predefinedInfo as any).hashtags
       };
     }
 
@@ -936,7 +938,8 @@ export const getImageNumAndInfo = (
   return {
     title: sanitizeText(raw.title),
     desc: sanitizeText(raw.desc),
-    detail: sanitizeText(raw.detail)
+    detail: sanitizeText(raw.detail),
+    hashtags: (raw as any).hashtags || []
   };
 };
 
@@ -1461,9 +1464,10 @@ export default function P6Analysis({ selectedImages, userName, onNext }: P6Analy
                     {(() => {
                       const imgNum = getImageNumber(activeItem.img, activeCenterIndex);
                       const kw = getImageKeywords(imgNum, userName);
+                      const hashtagsToDisplay = (info && info.hashtags && info.hashtags.length > 0) ? info.hashtags : kw;
                       return (
                         <div className="flex gap-1 justify-center flex-wrap max-w-full px-2 py-1">
-                          {kw.map((k, i) => (
+                          {hashtagsToDisplay.map((k, i) => (
                             <span 
                               key={i} 
                               className="text-[8.5px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-full transition-all duration-300"
@@ -1809,7 +1813,7 @@ export default function P6Analysis({ selectedImages, userName, onNext }: P6Analy
                     <div className="grid grid-cols-1 gap-3">
                       {activeContributors.map((c) => {
                         const imgObj = selectedImages.find(simg => simg.id === c.id);
-                        const info = imgObj ? getImageNumAndInfo(imgObj, c.indexInSelected, dynamicAnalysis, isLoading, timeLeft) : null;
+                        const info = imgObj ? getImageNumAndInfo(imgObj, c.indexInSelected, dynamicAnalysis, isLoading, timeLeft, userName) : null;
                         const descText = info ? info.desc : "선택하신 이미지의 분위기와 시각적 패턴이 당신의 미적 주관에 스며들어 분석 결과를 이끌어내는 근거가 되었습니다.";
                         
                         return (
@@ -1868,9 +1872,10 @@ export default function P6Analysis({ selectedImages, userName, onNext }: P6Analy
                                 {imgObj && (() => {
                                   const imgNum = getImageNumber(imgObj, c.indexInSelected);
                                   const kw = getImageKeywords(imgNum, userName);
+                                  const hashtagsToDisplay = (info && info.hashtags && info.hashtags.length > 0) ? info.hashtags : kw;
                                   return (
                                     <div className="flex flex-wrap gap-1 mt-1">
-                                      {kw.map((k, i) => (
+                                      {hashtagsToDisplay.map((k, i) => (
                                         <span 
                                           key={i} 
                                           className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md"

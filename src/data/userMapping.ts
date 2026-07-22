@@ -114,7 +114,11 @@ export function createUserImagesAuto(
       "도윤": "doyun",
       "수안": "suan",
       "하임": "haim",
-      "정인": "jungin"
+      "정인": "jungin",
+      "박가현": "parkgahun",
+      "전진혁": "jeonjinhyeok",
+      "전직혁": "jeonjinhyeok",
+      "정평안": "jeongpyeongan"
     };
 
     let mappedFolder = encodeURIComponent(folderNFC);
@@ -334,6 +338,219 @@ const gwangeoImages = createUserImagesAuto(
   gwangeoTraits
 );
 
+export const rawGahunSheet = [
+  { num: 1, main: "감각", sub1: "질감", sub2: "방법론" },
+  { num: 2, main: "취향", sub1: "감각", sub2: "의미" },
+  { num: 3, main: "대상", sub1: "직관", sub2: "색감" },
+  { num: 4, main: "취향", sub1: "대상", sub2: "감각" },
+  { num: 5, main: "취향", sub1: "감각", sub2: "대상" },
+  { num: 6, main: "취향", sub1: "감각", sub2: "의미" },
+  { num: 7, main: "감각", sub1: "대상", sub2: "취향" },
+  { num: 8, main: "대상", sub1: "취향", sub2: "의미" },
+  { num: 9, main: "취향", sub1: "대상", sub2: "감각" },
+  { num: 10, main: "대상", sub1: "취향", sub2: "형태" },
+  { num: 11, main: "의미", sub1: "감각", sub2: "형태" },
+  { num: 12, main: "의미", sub1: "감각", sub2: "색감" },
+  { num: 13, main: "취향", sub1: "의미", sub2: "직관" },
+  { num: 14, main: "의미", sub1: "취향", sub2: "직관" },
+  { num: 15, main: "대상", sub1: "형태", sub2: "색감" },
+  { num: 16, main: "취향", sub1: "감각", sub2: "의미" },
+  { num: 17, main: "취향", sub1: "의미", sub2: "감각" },
+  { num: 18, main: "취향", sub1: "감각", sub2: "직관" },
+  { num: 19, main: "취향", sub1: "감각", sub2: "직관" },
+  { num: 20, main: "감각", sub1: "대상", sub2: "직관" },
+  { num: 21, main: "의미", sub1: "색감", sub2: "대상" },
+  { num: 22, main: "의미", sub1: "색감", sub2: "취향" },
+  { num: 23, main: "취향", sub1: "색감", sub2: "감각" },
+  { num: 24, main: "취향", sub1: "감각", sub2: "질감" },
+  { num: 25, main: "대상", sub1: "감각", sub2: "직관" },
+  { num: 26, main: "대상", sub1: "취향", sub2: "색감" },
+  { num: 27, main: "형태", sub1: "질감", sub2: "대상" },
+  { num: 28, main: "형태", sub1: "대상", sub2: "색감" },
+  { num: 29, main: "형태", sub1: "색감", sub2: "대상" },
+  { num: 30, main: "대상", sub1: "형태", sub2: "취향" },
+  { num: 31, main: "직관", sub1: "의미", sub2: "감각" },
+  { num: 32, main: "감각", sub1: "직관", sub2: "의미" },
+  { num: 33, main: "대상", sub1: "감각", sub2: "직관" },
+  { num: 34, main: "대상", sub1: "직관", sub2: "의미" },
+  { num: 35, main: "대상", sub1: "감각", sub2: "형태" },
+  { num: 36, main: "대상", sub1: "의미", sub2: "직관" },
+  { num: 37, main: "형태", sub1: "대상", sub2: "의미" },
+  { num: 38, main: "대상", sub1: "직관", sub2: "취향" },
+  { num: 39, main: "대상", sub1: "의미", sub2: "취향" },
+  { num: 40, main: "대상", sub1: "감각", sub2: "의미" },
+  { num: 41, main: "대상", sub1: "의미", sub2: "직관" },
+  { num: 42, main: "대상", sub1: "의미", sub2: "직관" },
+  { num: 43, main: "대상", sub1: "방법론", sub2: "선명" },
+  { num: 44, main: "대상", sub1: "의미", sub2: "직관" },
+  { num: 45, main: "취향", sub1: "대상", sub2: "직관" },
+  { num: 46, main: "의미", sub1: "형태", sub2: "감각" },
+  { num: 47, main: "취향", sub1: "의미", sub2: "색감" },
+  { num: 48, main: "의미", sub1: "감각", sub2: "색감" },
+  { num: 49, main: "대상", sub1: "직관", sub2: "취향" },
+  { num: 50, main: "취향", sub1: "대상", sub2: "감각" },
+];
+
+export const rawJikhyeokSheet = [
+  { num: 1, main: "의미", sub1: "대상", sub2: "취향" },
+  { num: 2, main: "대상", sub1: "직관", sub2: "형태" },
+  { num: 3, main: "의미", sub1: "감각", sub2: "취향" },
+  { num: 4, main: "선명", sub1: "대상", sub2: "형태" },
+  { num: 5, main: "감각", sub1: "의미", sub2: "취향" },
+  { num: 6, main: "선명", sub1: "감각", sub2: "형태" },
+  { num: 7, main: "방법론", sub1: "의미", sub2: "감각" },
+  { num: 8, main: "직관", sub1: "형태", sub2: "방법론" },
+  { num: 9, main: "의미", sub1: "취향", sub2: "직관" },
+  { num: 10, main: "직관", sub1: "색감", sub2: "취향" },
+  { num: 11, main: "의미", sub1: "취향", sub2: "방법론" },
+  { num: 12, main: "형태", sub1: "방법론", sub2: "대상" },
+  { num: 13, main: "의미", sub1: "방법론", sub2: "대상" },
+  { num: 14, main: "선명", sub1: "형태", sub2: "대상" },
+  { num: 15, main: "의미", sub1: "방법론", sub2: "형태" },
+  { num: 16, main: "선명", sub1: "형태", sub2: "대상" },
+  { num: 17, main: "방법론", sub1: "의미", sub2: "감각" },
+  { num: 18, main: "방법론", sub1: "직관", sub2: "형태" },
+  { num: 19, main: "의미", sub1: "방법론", sub2: "형태" },
+  { num: 20, main: "색감", sub1: "직관", sub2: "질감" },
+  { num: 21, main: "감각", sub1: "방법론", sub2: "형태" },
+  { num: 22, main: "색감", sub1: "의미", sub2: "직관" },
+  { num: 23, main: "감각", sub1: "방법론", sub2: "의미" },
+  { num: 24, main: "대상", sub1: "형태", sub2: "질감" },
+  { num: 25, main: "감각", sub1: "대상", sub2: "형태" },
+  { num: 26, main: "대상", sub1: "형태", sub2: "색감" },
+  { num: 27, main: "대상", sub1: "형태", sub2: "직관" },
+  { num: 28, main: "형태", sub1: "선명", sub2: "대상" },
+  { num: 29, main: "대상", sub1: "형태", sub2: "선명" },
+  { num: 30, main: "대상", sub1: "형태", sub2: "선명" },
+  { num: 31, main: "의미", sub1: "방법론", sub2: "형태" },
+  { num: 32, main: "선명", sub1: "형태", sub2: "직관" },
+  { num: 33, main: "의미", sub1: "형태", sub2: "취향" },
+  { num: 34, main: "감각", sub1: "대상", sub2: "취향" },
+  { num: 35, main: "의미", sub1: "방법론", sub2: "취향" },
+  { num: 36, main: "직관", sub1: "대상", sub2: "질감" },
+  { num: 37, main: "의미", sub1: "형태", sub2: "취향" },
+  { num: 38, main: "대상", sub1: "방법론", sub2: "질감" },
+  { num: 39, main: "대상", sub1: "감각", sub2: "질감" },
+  { num: 40, main: "질감", sub1: "형태", sub2: "대상" },
+  { num: 41, main: "의미", sub1: "방법론", sub2: "형태" },
+  { num: 42, main: "대상", sub1: "형태", sub2: "선명" },
+  { num: 43, main: "의미", sub1: "방법론", sub2: "취향" },
+  { num: 44, main: "감각", sub1: "질감", sub2: "색감" },
+  { num: 45, main: "대상", sub1: "형태", sub2: "직관" },
+  { num: 46, main: "감각", sub1: "의미", sub2: "질감" },
+  { num: 47, main: "방법론", sub1: "의미", sub2: "감각" },
+  { num: 48, main: "대상", sub1: "선명", sub2: "직관" },
+  { num: 49, main: "방법론", sub1: "의미", sub2: "직관" },
+  { num: 50, main: "질감", sub1: "대상", sub2: "색감" },
+];
+
+export const rawPyeonganSheet = [
+  { num: 1, main: "색감", sub1: "질감", sub2: "의미" },
+  { num: 2, main: "대상", sub1: "감각", sub2: "형태" },
+  { num: 3, main: "대상", sub1: "감각", sub2: "색감" },
+  { num: 4, main: "대상", sub1: "감각", sub2: "색감" },
+  { num: 5, main: "감각", sub1: "색감", sub2: "형태" },
+  { num: 6, main: "대상", sub1: "선명", sub2: "형태" },
+  { num: 7, main: "색감", sub1: "감각", sub2: "의미" },
+  { num: 8, main: "대상", sub1: "형태", sub2: "선명" },
+  { num: 9, main: "대상", sub1: "형태", sub2: "선명" },
+  { num: 10, main: "방법론", sub1: "형태", sub2: "질감" },
+  { num: 11, main: "대상", sub1: "형태", sub2: "의미" },
+  { num: 12, main: "대상", sub1: "선명", sub2: "형태" },
+  { num: 13, main: "형태", sub1: "직관", sub2: "의미" },
+  { num: 14, main: "대상", sub1: "형태", sub2: "의미" },
+  { num: 15, main: "대상", sub1: "의미", sub2: "감각" },
+  { num: 16, main: "질감", sub1: "감각", sub2: "선명" },
+  { num: 17, main: "대상", sub1: "의미", sub2: "형태" },
+  { num: 18, main: "질감", sub1: "감각", sub2: "선명" },
+  { num: 19, main: "선명", sub1: "방법론", sub2: "감각" },
+  { num: 20, main: "대상", sub1: "선명", sub2: "감각" },
+  { num: 21, main: "대상", sub1: "방법론", sub2: "질감" },
+  { num: 22, main: "선명", sub1: "방법론", sub2: "질감" },
+  { num: 23, main: "선명", sub1: "감각", sub2: "대상" },
+  { num: 24, main: "방법론", sub1: "색감", sub2: "취향" },
+  { num: 25, main: "의미", sub1: "대상", sub2: "취향" },
+  { num: 26, main: "형태", sub1: "방법론", sub2: "질감" },
+  { num: 27, main: "방법론", sub1: "형태", sub2: "선명" },
+  { num: 28, main: "방법론", sub1: "형태", sub2: "선명" },
+  { num: 29, main: "형태", sub1: "대상", sub2: "방법론" },
+  { num: 30, main: "형태", sub1: "방법론", sub2: "감각" },
+  { num: 31, main: "의미", sub1: "방법론", sub2: "색감" },
+  { num: 32, main: "의미", sub1: "방법론", sub2: "감각" },
+  { num: 33, main: "의미", sub1: "방법론", sub2: "감각" },
+  { num: 34, main: "색감", sub1: "의미", sub2: "감각" },
+  { num: 35, main: "감각", sub1: "색감", sub2: "방법론" },
+  { num: 36, main: "대상", sub1: "색감", sub2: "감각" },
+  { num: 37, main: "직관", sub1: "형태", sub2: "감각" },
+  { num: 38, main: "선명", sub1: "대상", sub2: "감각" },
+  { num: 39, main: "취향", sub1: "감각", sub2: "질감" },
+  { num: 40, main: "취향", sub1: "감각", sub2: "질감" },
+  { num: 41, main: "의미", sub1: "취향", sub2: "감각" },
+  { num: 42, main: "대상", sub1: "의미", sub2: "형태" },
+  { num: 43, main: "질감", sub1: "의미", sub2: "감각" },
+  { num: 44, main: "대상", sub1: "감각", sub2: "직관" },
+  { num: 45, main: "형태", sub1: "취향", sub2: "의미" },
+  { num: 46, main: "감각", sub1: "의미", sub2: "직관" },
+  { num: 47, main: "대상", sub1: "감각", sub2: "선명" },
+  { num: 48, main: "직관", sub1: "방법론", sub2: "의미" },
+  { num: 49, main: "취향", sub1: "감각", sub2: "직관" },
+  { num: 50, main: "질감", sub1: "감각", sub2: "형태" },
+];
+
+const gahunCategoryWeights: Record<number, Record<string, number>> = {};
+const gahunTraits: Record<number, string> = {};
+rawGahunSheet.forEach(row => {
+  gahunTraits[row.num] = row.main;
+  const weights: Record<string, number> = {};
+  const categories = ["대상", "의미", "감각", "직관", "질감", "선명", "색감", "방법론", "취향", "형태"];
+  categories.forEach((cat) => {
+    weights[cat] = 10 + (row.num * cat.charCodeAt(0)) % 16;
+  });
+  weights[row.main] = 95;
+  weights[row.sub1] = 75;
+  if (row.sub2) {
+    weights[row.sub2] = 55;
+  }
+  gahunCategoryWeights[row.num] = weights;
+});
+const gahunImages = createUserImagesAuto("박가현", 50, undefined, gahunCategoryWeights, gahunTraits);
+
+const jikhyeokCategoryWeights: Record<number, Record<string, number>> = {};
+const jikhyeokTraits: Record<number, string> = {};
+rawJikhyeokSheet.forEach(row => {
+  jikhyeokTraits[row.num] = row.main;
+  const weights: Record<string, number> = {};
+  const categories = ["대상", "의미", "감각", "직관", "질감", "선명", "색감", "방법론", "취향", "형태"];
+  categories.forEach((cat) => {
+    weights[cat] = 10 + (row.num * cat.charCodeAt(0)) % 16;
+  });
+  weights[row.main] = 95;
+  weights[row.sub1] = 75;
+  if (row.sub2) {
+    weights[row.sub2] = 55;
+  }
+  jikhyeokCategoryWeights[row.num] = weights;
+});
+const jikhyeokImages = createUserImagesAuto("전진혁", 50, undefined, jikhyeokCategoryWeights, jikhyeokTraits);
+
+const pyeonganCategoryWeights: Record<number, Record<string, number>> = {};
+const pyeonganTraits: Record<number, string> = {};
+rawPyeonganSheet.forEach(row => {
+  pyeonganTraits[row.num] = row.main;
+  const weights: Record<string, number> = {};
+  const categories = ["대상", "의미", "감각", "직관", "질감", "선명", "색감", "방법론", "취향", "형태"];
+  categories.forEach((cat) => {
+    weights[cat] = 10 + (row.num * cat.charCodeAt(0)) % 16;
+  });
+  weights[row.main] = 95;
+  weights[row.sub1] = 75;
+  if (row.sub2) {
+    weights[row.sub2] = 55;
+  }
+  pyeonganCategoryWeights[row.num] = weights;
+});
+const pyeonganImages = createUserImagesAuto("정평안", 50, undefined, pyeonganCategoryWeights, pyeonganTraits);
+
 export const USER_CUSTOM_IMAGES: Record<string, ImageItem[]> = {
   "최지원": choiJiwonImages,
   ["최지원".normalize("NFD")]: choiJiwonImages,
@@ -352,7 +569,22 @@ export const USER_CUSTOM_IMAGES: Record<string, ImageItem[]> = {
   "광어를찾아서": gwangeoImages,
   ["광어를찾아서".normalize("NFD")]: gwangeoImages,
   "gwangeoreulchajaseo": gwangeoImages,
-  "gwangeo": gwangeoImages
+  "gwangeo": gwangeoImages,
+  "박가현": gahunImages,
+  ["박가현".normalize("NFD")]: gahunImages,
+  "parkgahun": gahunImages,
+  "bakgahun": gahunImages,
+  "전진혁": jikhyeokImages,
+  ["전진혁".normalize("NFD")]: jikhyeokImages,
+  "전직혁": jikhyeokImages,
+  ["전직혁".normalize("NFD")]: jikhyeokImages,
+  "jeonjinhyeok": jikhyeokImages,
+  "jeonjikhyeok": jikhyeokImages,
+  "jikhyeok": jikhyeokImages,
+  "정평안": pyeonganImages,
+  ["정평안".normalize("NFD")]: pyeonganImages,
+  "jeongpyeongan": pyeonganImages,
+  "pyeongan": pyeonganImages
 };
 
 export function getUserCustomImages(name: string): ImageItem[] | undefined {
@@ -500,6 +732,30 @@ export const PREDEFINED_USERS: PredefinedUserProfile[] = [
     dominantTrait: "형태",
     scores: {
       "형태": 95, "선명": 88, "방법론": 82, "대상": 75, "질감": 68, "의미": 60, "직관": 52, "색감": 45, "감각": 38, "취향": 30
+    }
+  },
+  {
+    name: "박가현",
+    folderName: "parkgahun",
+    dominantTrait: "대상",
+    scores: {
+      "대상": 96, "의미": 69, "감각": 68, "직관": 50, "질감": 33, "선명": 30, "색감": 41, "방법론": 32, "취향": 81, "형태": 47
+    }
+  },
+  {
+    name: "전진혁",
+    folderName: "jeonjinhyeok",
+    dominantTrait: "의미",
+    scores: {
+      "대상": 91, "의미": 96, "감각": 59, "직관": 46, "질감": 34, "선명": 47, "색감": 30, "방법론": 71, "취향": 32, "형태": 77
+    }
+  },
+  {
+    name: "정평안",
+    folderName: "jeongpyeongan",
+    dominantTrait: "대상",
+    scores: {
+      "대상": 96, "의미": 60, "감각": 76, "직관": 30, "질감": 42, "선명": 49, "색감": 42, "방법론": 58, "취향": 36, "형태": 66
     }
   }
 ];
